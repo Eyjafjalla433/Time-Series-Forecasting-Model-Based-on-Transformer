@@ -1,3 +1,5 @@
+"""Run ARIMA/ETS/RNN/TCN baselines across datasets and summarize results."""
+
 import argparse
 import gc
 import importlib
@@ -103,6 +105,7 @@ def configure_module(
     prediction_path = output_dir / "{}_{}_predictions.csv".format(dataset, benchmark.upper())
     benchmark_metrics_path = output_dir / "{}_{}_benchmark_metrics.json".format(dataset, benchmark.upper())
 
+    # Baseline files use module-level constants, so inject dataset/output paths before running.
     module.TRAIN_CSV = train_csv
     module.FUTURE_CSV = future_csv
     module.TARGET_COLUMN = target_column
@@ -201,6 +204,7 @@ def run_suite(
     total_runs = len(datasets) * len(benchmarks)
     run_index = 0
 
+    # The nested loop runs every dataset and benchmark under the same protocol.
     for dataset in datasets:
         train_csv, future_csv = resolve_dataset_files(dataset)
         target_column = resolve_target_column(train_csv, override=target_overrides.get(dataset, ""))

@@ -1,4 +1,10 @@
-﻿from __future__ import annotations
+﻿"""Preprocess TFB-style long CSV files into the wide tables used for forecasting.
+
+Defense focus: raw data is often a date/data/cols long table; this file pivots
+it into a [T, F] wide table and chronologically splits train/future data.
+"""
+
+from __future__ import annotations
 
 import argparse
 import json
@@ -28,6 +34,7 @@ def _coerce_sort_key(date_series: pd.Series) -> pd.Series:
 
 
 def _move_target_columns_to_end(table: pd.DataFrame, target_cols: Optional[Sequence[str]]) -> pd.DataFrame:
+    """Move target columns to the end so train/infer can use the shared column policy."""
     if not target_cols:
         return table
 
@@ -41,6 +48,7 @@ def _move_target_columns_to_end(table: pd.DataFrame, target_cols: Optional[Seque
 
 
 def _handle_missing_values(table: pd.DataFrame, fill_method: str) -> pd.DataFrame:
+    """Handle missing values created by pivoting long-format series into a wide table."""
     if not table.isna().values.any():
         return table
 
@@ -103,6 +111,7 @@ def tfb_to_wide_table(
     """Convert a TFB three-column table into a numeric [T, F] wide table."""
     variable_order = list(dict.fromkeys(df[var_col].tolist()))
 
+    # After pivoting, each row is a time step and each column is a variable: [T, F].
     wide_table = df.pivot_table(
         index="_sort_key",
         columns=var_col,
@@ -310,6 +319,7 @@ def main() -> None:
         train_output_path = args.train_output_path or default_train_path
         future_output_path = args.future_output_path or default_future_path
 
+        # The future split is the final offline-evaluation holdout, so it stays at the end of time.
         train_table, future_table = split_wide_table_for_future(
             wide_table=wide_table,
             future_ratio=float(args.future_ratio),

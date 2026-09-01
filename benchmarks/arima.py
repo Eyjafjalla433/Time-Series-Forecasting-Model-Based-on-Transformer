@@ -1,3 +1,9 @@
+"""ARIMA statistical baseline for one target column.
+
+Defense focus: use validation data to select ARIMA(p, d, q), then roll through
+future data so the result can be compared with the Transformer.
+"""
+
 import json
 import warnings
 from pathlib import Path
@@ -149,9 +155,11 @@ def score_order(train_values: np.ndarray, val_values: np.ndarray, order: Tuple[i
 
 
 def select_best_order(train_values: np.ndarray, val_values: np.ndarray) -> Dict:
+    """Select ARIMA order by validation MSE over a small hand-written grid."""
     best_order: Tuple[int, int, int] = (0, 1, 0)
     best_mse = float("inf")
     total_orders = len(ORDER_GRID)
+    # Keep the grid small so the traditional baseline remains practical on long series.
     for order_idx, order in enumerate(ORDER_GRID):
         if VERBOSE_PROGRESS:
             print(
@@ -171,6 +179,7 @@ def select_best_order(train_values: np.ndarray, val_values: np.ndarray) -> Dict:
 
 
 def rolling_forecast(train_values: np.ndarray, future_values: np.ndarray, order: Tuple[int, int, int]) -> pd.DataFrame:
+    """Forecast future values in rolling windows so the protocol matches run_infer.py."""
     rows: List[Dict[str, float]] = []
     train_len = len(train_values)
     offsets = list(range(0, len(future_values), STRIDE))

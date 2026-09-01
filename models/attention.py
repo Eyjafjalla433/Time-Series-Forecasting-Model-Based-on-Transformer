@@ -1,3 +1,5 @@
+"""Scaled dot-product attention and multi-head attention implementation."""
+
 import torch
 import torch.nn as nn
 import math
@@ -10,6 +12,7 @@ def attention(query, key, value, mask=None, dropout=None):
     mask (optional): broadcastable to [B, H, L, L]
     """
     d_k = query.size(-1)
+    # Attention scores measure query-key relevance; sqrt(d_k) stabilizes the scale.
     scores = torch.matmul(query, key.transpose(-2, -1)) / math.sqrt(d_k)
     if mask is not None:
         scores = scores.masked_fill(mask == 0, -1e9)
@@ -34,6 +37,7 @@ class MultiHeadedAttention(nn.Module):
             mask = mask.unsqueeze(1)
         nbatches = query.size(0)
 
+        # Linear projections are split from [B, L, d_model] into [B, H, L, d_k].
         query, key, value = [
             lin(x).view(nbatches, -1, self.h, self.d_k).transpose(1, 2)
             for lin, x in zip(self.linears, (query, key, value))

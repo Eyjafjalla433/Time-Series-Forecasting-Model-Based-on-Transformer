@@ -1,3 +1,5 @@
+"""Summarize benchmark prediction CSVs into long/wide metric tables."""
+
 import argparse
 import csv
 import json
@@ -36,6 +38,7 @@ def resolve_prediction_path(predictions_dir: Path, dataset: str, benchmark: str)
 
 
 def compute_row(dataset: str, benchmark: str, prediction_path: Path, seasonality: int) -> Dict[str, object]:
+    """Reuse prediction_metrics so every benchmark uses the same metric formulas."""
     pred, truth, truth_for_mase, _, num_rows = prediction_metrics.load_arrays(prediction_path)
     metrics = prediction_metrics.compute_metrics(pred, truth, truth_for_mase, seasonality=seasonality)
     row: Dict[str, object] = {
@@ -73,6 +76,7 @@ def save_long_csv(rows: Sequence[Dict[str, object]], output_path: Path) -> None:
 
 
 def save_wide_csv(rows: Sequence[Dict[str, object]], output_path: Path, datasets: Sequence[str], benchmarks: Sequence[str]) -> None:
+    """Save a paper/table-friendly benchmark x dataset metric matrix."""
     metric_names = ["mae", "mape", "rmse", "mase"]
     rows_by_key = {(row["dataset"], row["benchmark"]): row for row in rows}
     output_path.parent.mkdir(parents=True, exist_ok=True)

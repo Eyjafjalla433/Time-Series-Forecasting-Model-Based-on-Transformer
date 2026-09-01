@@ -1,4 +1,10 @@
-﻿import csv
+﻿"""Training entry point for the Transformer time-series forecaster.
+
+Defense focus: this file connects configuration, data loading, model creation,
+optimization, validation, and checkpointing into one training pipeline.
+"""
+
+import csv
 import math
 import time
 from pathlib import Path
@@ -169,6 +175,7 @@ def main():
     train_csv_has_header = bool(data_cfg.get("train_csv_has_header", True))
     synthetic_steps = int(data_cfg.get("synthetic_total_steps", 1000))
 
+    # Prefer processed real data; synthetic data is only for pipeline sanity checks.
     if train_csv:
         series = load_series_from_csv(train_csv, has_header=train_csv_has_header)
     else:
@@ -181,6 +188,7 @@ def main():
         out_dim=out_dim,
     )
 
+    # Time series must be split chronologically to avoid leaking future information.
     val_ratio = float(train_cfg.get("val_ratio", 0.2))
     train_series, val_series = split_series_for_train_val(
         series=series,
@@ -213,6 +221,7 @@ def main():
     train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_set, batch_size=batch_size, shuffle=False)
 
+    # make_model assembles the Encoder-Decoder Transformer from config values.
     model = make_model(
         src_dim=src_dim,
         tgt_dim=tgt_dim,
@@ -234,6 +243,7 @@ def main():
     min_lr_ratio = max(0.0, min(min_lr_ratio, 1.0))
 
     def lr_lambda(step: int) -> float:
+        # Warm up first for stable training, then decay with a cosine schedule.
         if step < warmup_steps:
             return float(step + 1) / float(warmup_steps)
         progress = float(step - warmup_steps) / float(max(1, total_steps - warmup_steps))
@@ -294,6 +304,7 @@ def main():
                 )
 
             is_best_epoch = 0
+            # Save the best validation checkpoint instead of blindly saving the last epoch.
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
                 best_epoch = epoch

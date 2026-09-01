@@ -1,3 +1,5 @@
+"""Feature projection and positional encoding for time-series tokens."""
+
 import torch
 import torch.nn as nn
 import math
@@ -7,6 +9,7 @@ class TimeSeriesEmbedding(nn.Module):
     """Map time-series features [B, L, input_dim] to model states [B, L, d_model]."""
     def __init__(self, input_dim, d_model):
         super(TimeSeriesEmbedding, self).__init__()
+        # Project each time step's feature vector into the Transformer's d_model space.
         self.embedding = nn.Linear(input_dim, d_model) 
         self.position_encoding = PositionalEncoding(d_model, dropout=0.1)
 
@@ -22,6 +25,7 @@ class PositionalEncoding(nn.Module):
         super(PositionalEncoding, self).__init__()
         self.dropout = nn.Dropout(p=dropout)
 
+        # Fixed sinusoidal positions let the model distinguish time order inside a window.
         pe = torch.zeros(max_len, d_model)
         position = torch.arange(0, max_len).unsqueeze(1)
         div_term = torch.exp(torch.arange(0, d_model, 2) * -(math.log(10000.0) / d_model))

@@ -1,3 +1,5 @@
+"""Plot train/validation loss curves from the metrics CSV produced by run_train.py."""
+
 import argparse
 import csv
 from pathlib import Path
@@ -49,6 +51,7 @@ def plot_losses(
     out = Path(output_path)
     out.parent.mkdir(parents=True, exist_ok=True)
 
+    # Loss curves help show convergence and possible overfitting during the defense.
     plt.figure(figsize=(10, 6))
     plt.plot(epochs, train_losses, label="Train Loss", marker="o", linewidth=1.8, markersize=3)
     plt.plot(epochs, val_losses, label="Val Loss", marker="s", linewidth=1.8, markersize=3)

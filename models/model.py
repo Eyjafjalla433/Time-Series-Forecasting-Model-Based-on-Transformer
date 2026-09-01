@@ -1,3 +1,5 @@
+"""Top-level Encoder-Decoder Transformer model for time-series forecasting."""
+
 import torch.nn as nn
 from .embeddings import TimeSeriesEmbedding
 from .layers import Encoder, Decoder, EncoderLayer, DecoderLayer
@@ -25,11 +27,13 @@ class TransformerTimeSeriesModel(nn.Module):
         tgt_mask: [B, L_out, L_out]
         returns: [B, L_out, out_dim]
         """
+        # The encoder turns history into memory; the decoder uses that memory to predict future steps.
         memory = self.encoder(self.src_embed(src), src_mask)
         output = self.decoder(self.tgt_embed(tgt), memory, src_mask, tgt_mask)
         return self.generator(output)
 
 def make_model(src_dim, N=6, d_model=512, d_ff=2048, h=8, dropout=0.1, tgt_dim=None, out_dim=1):
+    """Build and initialize the Transformer model from config values."""
     model = TransformerTimeSeriesModel(src_dim, d_model, N, h, d_ff, dropout, tgt_dim=tgt_dim, out_dim=out_dim)
     for p in model.parameters():
         if p.dim() > 1:

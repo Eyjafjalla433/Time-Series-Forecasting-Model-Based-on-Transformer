@@ -1,3 +1,9 @@
+"""Training utilities shared by run_train.py.
+
+Defense focus: Batch builds Transformer masks and shifted decoder targets, while
+run_epoch performs forward passes, loss computation, backpropagation, and LR updates.
+"""
+
 import time
 from dataclasses import dataclass
 from typing import Optional
@@ -26,6 +32,7 @@ class Batch:
         self.src_mask = self.make_src_mask(src, pad_value)
 
         if tgt is not None:
+            # Shift decoder inputs so each position predicts the next target value.
             self.tgt = tgt[:, :-1, :]
             self.tgt_y = tgt[:, 1:, :]
             self.tgt_mask = self.make_tgt_mask(self.tgt, pad_value)
@@ -44,6 +51,7 @@ class Batch:
             tgt_mask = torch.ones(tgt.size(0), 1, tgt.size(1), dtype=torch.bool, device=tgt.device)
         else:
             tgt_mask = (tgt != pad_value).any(dim=-1).unsqueeze(1)
+        # The causal mask prevents decoder position t from seeing targets after t.
         tgt_mask = tgt_mask & subsequent_mask(tgt.size(1), device=tgt.device)
         return tgt_mask
 
@@ -98,6 +106,7 @@ def run_epoch(
     n_accum = 0
 
     for i, batch in enumerate(data_iter):
+        # Output shape is aligned with batch.tgt_y: [B, pred_length, out_dim].
         out = model.forward(batch.src, batch.tgt, batch.src_mask, batch.tgt_mask)
         loss, loss_node = loss_compute(out, batch.tgt_y, batch.ntokens)
 

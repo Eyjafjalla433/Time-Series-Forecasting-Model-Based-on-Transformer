@@ -1,3 +1,5 @@
+"""Evaluation helper for regression-style forecasting metrics."""
+
 from typing import Dict
 
 import torch
@@ -25,6 +27,7 @@ def evaluate_regression(model: torch.nn.Module, data_loader, device: torch.devic
             pred = model(batch.src, batch.tgt, batch.src_mask, batch.tgt_mask)
             target = batch.tgt_y
 
+            # Accumulate squared and absolute errors, then normalize by all predicted values.
             diff = pred - target
             mse_sum += torch.sum(diff * diff).item()
             mae_sum += torch.sum(torch.abs(diff)).item()

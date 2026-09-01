@@ -1,3 +1,5 @@
+"""Render a synthetic gallery of common time-series patterns for reports/slides."""
+
 import argparse
 from pathlib import Path
 from typing import Callable, List, Tuple
@@ -54,6 +56,7 @@ def build_non_shifting(x: np.ndarray, rng: np.random.Generator) -> np.ndarray:
 
 
 def get_series_specs() -> List[SeriesSpec]:
+    """Return named synthetic patterns used to explain forecasting challenges."""
     return [
         ("(a) Seasonality", build_seasonality),
         ("(b) Trend", build_trend),
@@ -81,6 +84,7 @@ def render_pattern_gallery(
     fig, axes = plt.subplots(2, 3, figsize=(12, 6))
     axes = axes.flatten()
 
+    # Each subplot shows one typical pattern: trend, seasonality, shift, or nonstationarity.
     for ax, (title, builder) in zip(axes, specs):
         y = builder(x, rng)
         ax.plot(x, y, color="#4C9BE8", linewidth=0.9, alpha=0.95)

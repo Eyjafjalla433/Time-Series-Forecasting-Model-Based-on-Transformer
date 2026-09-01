@@ -1,3 +1,5 @@
+"""Compute MAE, MAPE, RMSE, and MASE from prediction CSV files."""
+
 import argparse
 from pathlib import Path
 from typing import List, Sequence, Tuple
@@ -23,6 +25,7 @@ def resolve_prediction_path(prediction_path: str) -> Path:
 
 
 def collect_value_columns(df: pd.DataFrame) -> Tuple[List[str], List[str]]:
+    """Resolve matching prediction/truth columns from Transformer or benchmark outputs."""
     pred_columns = sorted(col for col in df.columns if col.startswith("pred_"))
     truth_columns = sorted(col for col in df.columns if col.startswith("truth_"))
     if not pred_columns and not truth_columns:
@@ -59,6 +62,7 @@ def load_arrays(prediction_path: Path) -> Tuple[np.ndarray, np.ndarray, np.ndarr
         useful_columns = ["target_index"] + useful_columns
 
     clean_df = df[useful_columns].copy()
+    # target_index lets duplicated horizons be sorted by true time before metric computation.
     if "target_index" in clean_df.columns:
         clean_df["target_index"] = pd.to_numeric(clean_df["target_index"], errors="coerce")
 
@@ -90,6 +94,7 @@ def load_arrays(prediction_path: Path) -> Tuple[np.ndarray, np.ndarray, np.ndarr
 
 
 def compute_metrics(pred: np.ndarray, truth: np.ndarray, truth_for_mase: np.ndarray, seasonality: int) -> dict:
+    """Compute common forecasting metrics, including scale-free MASE."""
     if pred.shape != truth.shape:
         raise ValueError("Prediction shape {} does not match truth shape {}.".format(pred.shape, truth.shape))
     if pred.size == 0:

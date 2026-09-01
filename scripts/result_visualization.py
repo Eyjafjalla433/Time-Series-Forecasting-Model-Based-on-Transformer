@@ -1,3 +1,5 @@
+"""Plot prediction-vs-truth curves from rolling evaluation outputs."""
+
 import argparse
 from pathlib import Path
 from typing import Optional, Tuple
@@ -95,6 +97,7 @@ def select_best_window(
     best_start = None
     best_score = None
 
+    # Pick the lowest-error continuous target_index segment for a clearer comparison plot.
     segment_start = 0
     target_values = df[target_column].to_numpy()
     for idx in range(1, len(df) + 1):

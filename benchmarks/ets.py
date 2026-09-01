@@ -1,3 +1,9 @@
+"""ETS exponential-smoothing baseline for one target column.
+
+Defense focus: ETS models level, trend, and seasonality as an interpretable
+traditional forecasting baseline.
+"""
+
 import json
 from pathlib import Path
 from typing import Dict, List
@@ -86,6 +92,7 @@ def validate_forecast(forecast: np.ndarray, history: np.ndarray) -> np.ndarray:
 
 
 def build_candidates(train_length: int) -> List[Dict]:
+    """Build ETS candidate configurations; seasonal candidates require enough history."""
     candidates: List[Dict] = [
         {"name": "naive", "mode": "naive"},
         {
@@ -110,6 +117,7 @@ def build_candidates(train_length: int) -> List[Dict]:
             "seasonal_periods": None,
         },
     ]
+    # Try seasonal ETS only when there are at least two full periods for stable fitting.
     if train_length >= 2 * SEASONAL_PERIOD:
         candidates.extend(
             [
@@ -208,6 +216,7 @@ def select_best_params(train_values: np.ndarray, val_values: np.ndarray) -> Dict
 
 
 def rolling_forecast(train_values: np.ndarray, future_values: np.ndarray, params: Dict) -> pd.DataFrame:
+    """Run rolling future evaluation with the selected ETS configuration."""
     rows: List[Dict[str, float]] = []
     train_len = len(train_values)
     offsets = list(range(0, len(future_values), STRIDE))

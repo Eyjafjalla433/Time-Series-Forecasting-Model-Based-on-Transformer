@@ -1,3 +1,9 @@
+"""RNN neural-network baseline for multivariate time-series forecasting.
+
+Defense focus: RNN is a classic sequence-modeling neural baseline that uses the
+same train/future split and output format as the Transformer.
+"""
+
 import copy
 import json
 import random
@@ -93,6 +99,8 @@ def compute_stats(train_df: pd.DataFrame) -> Dict[str, np.ndarray]:
 
 
 class WindowDataset(Dataset):
+    """Build fixed-length RNN windows and horizon-length labels."""
+
     def __init__(self, features: np.ndarray, target: np.ndarray):
         self.features = features.astype(np.float32)
         self.target = target.astype(np.float32)
@@ -113,6 +121,8 @@ class WindowDataset(Dataset):
 
 
 class RecurrentForecaster(nn.Module):
+    """A compact RNN encoder plus MLP head that predicts the full horizon at once."""
+
     def __init__(self, input_dim: int, hidden_size: int, num_layers: int, horizon: int, dropout: float):
         super().__init__()
         self.rnn = nn.RNN(
@@ -132,6 +142,7 @@ class RecurrentForecaster(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         output, _ = self.rnn(x)
+        # Use the last hidden state as the summary of the whole historical window.
         last_hidden = output[:, -1, :]
         pred = self.head(last_hidden)
         return pred.unsqueeze(-1)
@@ -252,6 +263,7 @@ def train_model(train_loader: DataLoader, val_loader: DataLoader, input_dim: int
 
 
 def run_future_forecast(model: nn.Module, train_df: pd.DataFrame, future_df: pd.DataFrame, stats: Dict[str, np.ndarray], device: torch.device) -> pd.DataFrame:
+    """Use train history plus already elapsed future rows as rolling context."""
     history_features = ((train_df.to_numpy(dtype=np.float32) - stats["feature_mean"]) / stats["feature_std"]).astype(np.float32)
     future_features = ((future_df.to_numpy(dtype=np.float32) - stats["feature_mean"]) / stats["feature_std"]).astype(np.float32)
     future_target = future_df[TARGET_COLUMN].to_numpy(dtype=np.float32)

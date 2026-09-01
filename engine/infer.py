@@ -1,3 +1,9 @@
+"""Inference helpers for checkpoint loading, tensor preparation, and decoding.
+
+Defense focus: use the trained Transformer in a real forecasting setup where
+future values are unavailable and must be generated one step at a time.
+"""
+
 import csv
 import json
 from pathlib import Path
@@ -150,6 +156,7 @@ def make_decoder_start_token(
     batch_size = src.size(0)
     device = src.device
 
+    # zeros is the stable default start token; last can reuse the last source value.
     if mode == "zeros":
         return torch.zeros(batch_size, 1, tgt_dim, dtype=src.dtype, device=device)
     if mode == "last":
@@ -183,6 +190,7 @@ def autoregressive_forecast(
             tgt_mask = subsequent_mask(tgt_len, device=src.device).expand(src.size(0), -1, -1)
             out = model(src, tgt_seq, src_mask, tgt_mask)
             next_step = out[:, -1:, :]
+            # Append the predicted next_step so the decoder can continue forecasting.
             preds.append(next_step)
             tgt_seq = torch.cat([tgt_seq, next_step], dim=1)
 

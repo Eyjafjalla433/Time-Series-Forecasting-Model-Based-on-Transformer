@@ -1,4 +1,10 @@
-﻿import csv
+﻿"""Inference and offline rolling-evaluation entry point.
+
+Defense focus: after training, this file loads a checkpoint, simulates a real
+forecasting scenario, and compares autoregressive predictions with held-out data.
+"""
+
+import csv
 import json
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
@@ -129,6 +135,7 @@ def run_offline_eval_from_future(
 
     context_path = infer_cfg.get("context_path")
     context_has_header = bool(infer_cfg.get("context_has_header", True))
+    # context is visible history; future is held-out ground truth for evaluation.
     if context_path:
         context_series = load_wide_series_from_csv(path=context_path, has_header=context_has_header)
         full_series = torch.cat([context_series, future_series], dim=0)
@@ -162,6 +169,7 @@ def run_offline_eval_from_future(
     truth_chunks: List[torch.Tensor] = []
     records: List[Dict[str, float]] = []
 
+    # Each origin is one forecasting event: use only prior rows to predict future rows.
     for origin in range(eval_start, eval_end, stride):
         src_window = full_series[origin - input_length : origin, src_cols]
         src, src_mask = prepare_source_tensor(
@@ -171,6 +179,7 @@ def run_offline_eval_from_future(
             input_std=None,
         )
 
+        # In inference, feed previous predictions back into the decoder instead of true future values.
         pred_norm = autoregressive_forecast(
             model=model,
             src=src,
@@ -250,6 +259,7 @@ def main():
     # target_mean = stats["target_mean"] if stats else None
     # target_std = stats["target_std"] if stats else None
 
+    # future_path enables rolling evaluation; otherwise the script runs single-window inference.
     if infer_cfg.get("future_path"):
         run_offline_eval_from_future(
             model=model,

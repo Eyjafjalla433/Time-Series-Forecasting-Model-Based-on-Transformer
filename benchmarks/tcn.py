@@ -1,3 +1,9 @@
+"""TCN neural-network baseline for multivariate time-series forecasting.
+
+Defense focus: TCN uses causal 1D convolutions to model local and long-range
+temporal dependencies as another neural baseline.
+"""
+
 import copy
 import json
 import random
@@ -92,6 +98,8 @@ def compute_stats(train_df: pd.DataFrame) -> Dict[str, np.ndarray]:
 
 
 class WindowDataset(Dataset):
+    """Build fixed-length TCN windows and horizon-length labels."""
+
     def __init__(self, features: np.ndarray, target: np.ndarray):
         self.features = features.astype(np.float32)
         self.target = target.astype(np.float32)
@@ -112,6 +120,8 @@ class WindowDataset(Dataset):
 
 
 class Chomp1d(nn.Module):
+    """Remove right-side padding so dilated Conv1d remains causal in length."""
+
     def __init__(self, chomp_size: int):
         super().__init__()
         self.chomp_size = chomp_size
@@ -125,6 +135,7 @@ class Chomp1d(nn.Module):
 class TemporalBlock(nn.Module):
     def __init__(self, in_channels: int, out_channels: int, kernel_size: int, dilation: int, dropout: float):
         super().__init__()
+        # Padding plus Chomp1d keeps the dilated convolution causal.
         padding = (kernel_size - 1) * dilation
         self.net = nn.Sequential(
             nn.Conv1d(in_channels, out_channels, kernel_size, padding=padding, dilation=dilation),
@@ -146,6 +157,8 @@ class TemporalBlock(nn.Module):
 
 
 class TCNForecaster(nn.Module):
+    """Stack dilated temporal blocks and predict the whole horizon from the last feature."""
+
     def __init__(self, input_dim: int, horizon: int, dropout: float):
         super().__init__()
         layers: List[nn.Module] = []

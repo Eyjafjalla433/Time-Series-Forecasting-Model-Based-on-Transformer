@@ -1,3 +1,5 @@
+"""Generate sampled trend plots for raw or processed CSV datasets."""
+
 import argparse
 from pathlib import Path
 from typing import Iterable, List, Optional, Sequence, Tuple
@@ -21,6 +23,7 @@ def list_csv_files(input_dirs: Sequence[str]) -> List[Path]:
 
 
 def infer_is_tfb_long_format(df: pd.DataFrame) -> bool:
+    """Detect whether a CSV is TFB long format: date/data/cols."""
     return TFB_REQUIRED_COLUMNS.issubset(set(df.columns))
 
 
@@ -176,6 +179,7 @@ def visualize_csv(
     df = pd.read_csv(csv_path)
     output_path = build_output_path(output_dir, csv_path)
 
+    # The same script supports raw long tables and processed wide tables for easy figure prep.
     if infer_is_tfb_long_format(df):
         selected_series = plot_tfb_long_csv(
             df=df,

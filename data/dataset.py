@@ -1,3 +1,9 @@
+"""Sliding-window dataset used by the Transformer training loop.
+
+Defense focus: convert a continuous [T, F] time-series table into supervised
+samples so the model can learn from past input_length steps to future pred_length steps.
+"""
+
 from typing import Iterable, Optional, Sequence, Union
 
 import torch
@@ -8,6 +14,7 @@ IndexLike = Optional[Union[Sequence[int], torch.Tensor]]
 
 
 def _normalize_indices(indices: IndexLike, width: int) -> Sequence[int]:
+    """Convert optional column selections into a concrete Python index list."""
     if indices is None:
         return list(range(width))
     if isinstance(indices, torch.Tensor):
@@ -75,6 +82,7 @@ class TimeSeriesWindowDataset(Dataset):
         if idx < 0 or idx >= self.num_samples:
             raise IndexError("Sample index out of range.")
 
+        # src is the historical window; tgt_full starts at the last source step for shifted decoder training.
         src_start = idx
         src_end = src_start + self.input_length
 

@@ -1,3 +1,5 @@
+"""Reusable Transformer layers: encoder, decoder, FFN, residual, and layer norm."""
+
 import torch
 import torch.nn as nn
 import copy
@@ -19,6 +21,7 @@ class Encoder(nn.Module):
 
     def forward(self, x, mask):
         "Pass the input (and mask) through each layer in turn."
+        # Stacked encoder layers progressively extract temporal dependency representations.
         for layer in self.layers:
             x = layer(x, mask)
         return self.norm(x)
@@ -79,6 +82,7 @@ class DecoderLayer(nn.Module):
 
     def forward(self, x, memory, src_mask, tgt_mask):
         m = memory
+        # The decoder applies masked self-attention first, then cross-attention over encoder memory.
         x = self.sublayer[0](x, lambda x: self.self_attn(x, x, x, tgt_mask))
         x = self.sublayer[1](x, lambda x: self.src_attn(x, m, m, src_mask))
         return self.sublayer[2](x, self.feed_forward)

@@ -1,3 +1,5 @@
+"""Checkpoint helpers for saving/loading model and optional optimizer state."""
+
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -20,6 +22,7 @@ def load_checkpoint(path: str, map_location=None) -> Dict[str, Any]:
         # Backward compatibility for older PyTorch versions.
         payload = torch.load(str(ckpt_path), map_location=map_location)
 
+    # Support both full checkpoints and older files that only contain a raw state_dict.
     if isinstance(payload, dict) and "model_state_dict" in payload:
         return payload
     if isinstance(payload, dict):
